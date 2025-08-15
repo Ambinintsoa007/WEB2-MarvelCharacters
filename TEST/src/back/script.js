@@ -1,9 +1,4 @@
-// PUT /characters/:id ==> Update a character by ID
-// DELETE /characters/:id ==> Delete a character by ID
-
 const express = require('express');
-const { json } = require('express/lib/response');
-const { error } = require('node:console');
 const app = express();
 const fs = require('node:fs/promises')
 
@@ -28,7 +23,7 @@ app.get('/characters/:id', async (req,res) => {
         const data = await fs.readFile('characters.json' , 'utf-8')
         const characters = JSON.parse(data)
         const characterId = parseInt(req.params.id)
-        const character = characters.characters.find(char => char.id == characterId)
+        const character = characters.characters.find(char => char.id === characterId)
 
         if(!character){
             return res.status(404).json({error : "cannot find the character"})
@@ -41,14 +36,14 @@ app.get('/characters/:id', async (req,res) => {
 })
 
 // POST /characters ==> Create a new character
-app.post('/charcters', async (req,res) => {
+app.post('/characters', async (req,res) => {
     try{
         const data = await fs.readFile('characters.json','utf-8')
         const characters = JSON.parse(data)
 
-        const {name,realName,Universe} = req.body
+        const {name,realName,universe} = req.body
 
-        if(!name || !realName || ! Universe){
+        if(!name || !realName || ! universe){
             return res.status(400).json({error : "can't be empty"})
         }
 
@@ -58,18 +53,77 @@ app.post('/charcters', async (req,res) => {
             id: newId,
             name,
             realName,
-            Universe
+            universe
         }
 
         characters.characters.push(newCharacter)
         await fs.writeFile('characters.json', JSON.stringify(characters,null,2))
 
-        res.status(200).json(newCharacter)
+        res.status(201).json(newCharacter)
     }
     catch(error){
         res.status(500).json({error : "cannot create the character"})
     }
 })
+
+
+// PUT /characters/:id ==> Update a character by ID
+app.put('/characters/:id',async (req,res) => {
+    try{
+        const data = await fs.readFile('characters.json','utf8')
+        const characters = JSON.parse(data)
+        const characterId = parseInt(req.params.id)
+        const characterIndex = characters.characters.findIndex(char => char.id === characterId)
+
+        if(characterIndex === -1){
+            return res.status(404).json({error: "Character not found"})
+        }
+
+        const {name, realName, universe} = req.body
+
+        if(!name || !realName || !universe){
+            return res.status(400).json({error: "all fields are requiered"})
+        }
+
+        characters.characters[characterIndex] = {
+            id: characterId,
+            name,
+            realName,
+            universe
+        }
+        
+        await fs.writeFile('characters.json',JSON.stringify(characters, null, 2))
+        res.json(characters.characters[characterIndex])
+    }
+    catch(err){
+        res.status(500).json({err: "cannot update character"})
+    }
+
+})
+
+
+// DELETE /characters/:id ==> Delete a character by ID
+app.delete('/characters/:id', async (req,res) => {
+    try{
+        const data = await fs.readFile('characters.json','utf8')
+        const characters = JSON.parse(data)
+        const characterId = parseInt(req.params.id)
+        const characterIndex = characters.characters.findIndex(char => char.id === characterId)
+
+        if (characterIndex === -1) {
+           return res.status(404).json({error: "Character not found"})
+       }
+
+       const deletedCharacter = characters.characters.splice(characterIndex, 1)[0]
+
+       await fs.writeFile('characters.json', JSON.stringify(characters, null, 2))
+       res.json({message: "Character deleted", character: deletedCharacter})
+    }
+    catch(error){
+        res.status(500).json({error: "cannot delete character"})
+    }
+})
+
  
 app.listen(8080, () => {
     console.log("Server running on 8080");
