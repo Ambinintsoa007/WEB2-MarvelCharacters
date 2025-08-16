@@ -4,15 +4,27 @@ const fs = require('node:fs/promises')
 
 app.use(express.json())
 
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*') //autorise tout les origines à accéder au server, comme le port react 5173
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE') //autorise tout les requete http
+    res.header('Access-Control-Allow-Headers', 'Content-Type') //
+    next()
+})
+
 
 // GET /characters ==> Get all characters
 app.get('/characters', async (req,res) => {
+    console.log("route GET /character appelé");
+    
     try{
-        const data = await fs.readFile('characters.json','utf-8')
+        console.log("tentative de lecture du fichier");
+        const data = await fs.readFile('../../public/characters.json','utf-8')
         const characters = JSON.parse(data)
         res.json(characters.characters)
     }
     catch(error){
+        console.log("Erroe :" ,error);
+        
         res.status(500).json({error : "Erreur lors de la lecture des characters"})
     }
 }) 
@@ -20,7 +32,7 @@ app.get('/characters', async (req,res) => {
 // GET /characters/:id ==> Get a character by ID
 app.get('/characters/:id', async (req,res) => {
     try{
-        const data = await fs.readFile('characters.json' , 'utf-8')
+        const data = await fs.readFile('../../public/characters.json' , 'utf-8')
         const characters = JSON.parse(data)
         const characterId = parseInt(req.params.id)
         const character = characters.characters.find(char => char.id === characterId)
@@ -38,7 +50,7 @@ app.get('/characters/:id', async (req,res) => {
 // POST /characters ==> Create a new character
 app.post('/characters', async (req,res) => {
     try{
-        const data = await fs.readFile('characters.json','utf-8')
+        const data = await fs.readFile('../../public/characters.json','utf-8')
         const characters = JSON.parse(data)
 
         const {name,realName,universe} = req.body
@@ -57,7 +69,7 @@ app.post('/characters', async (req,res) => {
         }
 
         characters.characters.push(newCharacter)
-        await fs.writeFile('characters.json', JSON.stringify(characters,null,2))
+        await fs.writeFile('../../public/characters.json', JSON.stringify(characters,null,2/**2 c'est pour l'indentation dans le fichier JSON, 2 espacement */)) //ça va sauvegarder les données modifié dans le JSON
 
         res.status(201).json(newCharacter)
     }
@@ -70,12 +82,12 @@ app.post('/characters', async (req,res) => {
 // PUT /characters/:id ==> Update a character by ID
 app.put('/characters/:id',async (req,res) => {
     try{
-        const data = await fs.readFile('characters.json','utf8')
+        const data = await fs.readFile('../../public/characters.json','utf8')
         const characters = JSON.parse(data)
         const characterId = parseInt(req.params.id)
         const characterIndex = characters.characters.findIndex(char => char.id === characterId)
 
-        if(characterIndex === -1){
+        if(characterIndex === -1){ //si findIndex ne trouve rien il retourne -1 else il retourne l'index trouver
             return res.status(404).json({error: "Character not found"})
         }
 
@@ -92,7 +104,7 @@ app.put('/characters/:id',async (req,res) => {
             universe
         }
         
-        await fs.writeFile('characters.json',JSON.stringify(characters, null, 2))
+        await fs.writeFile('../../public/characters.json',JSON.stringify(characters, null, 2))
         res.json(characters.characters[characterIndex])
     }
     catch(err){
@@ -105,7 +117,7 @@ app.put('/characters/:id',async (req,res) => {
 // DELETE /characters/:id ==> Delete a character by ID
 app.delete('/characters/:id', async (req,res) => {
     try{
-        const data = await fs.readFile('characters.json','utf8')
+        const data = await fs.readFile('../../public/characters.json','utf8')
         const characters = JSON.parse(data)
         const characterId = parseInt(req.params.id)
         const characterIndex = characters.characters.findIndex(char => char.id === characterId)
@@ -116,7 +128,7 @@ app.delete('/characters/:id', async (req,res) => {
 
        const deletedCharacter = characters.characters.splice(characterIndex, 1)[0]
 
-       await fs.writeFile('characters.json', JSON.stringify(characters, null, 2))
+       await fs.writeFile('../../public/ characters.json', JSON.stringify(characters, null, 2))
        res.json({message: "Character deleted", character: deletedCharacter})
     }
     catch(error){
@@ -125,7 +137,6 @@ app.delete('/characters/:id', async (req,res) => {
 })
 
  
-app.listen(8080, () => {
+app.listen(7777, () => {
     console.log("Server running on 8080");
-    
 })
